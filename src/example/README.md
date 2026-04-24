@@ -5,18 +5,18 @@ Custom Workbench application based on quay.io/jupyter/base-notebook.
 ## Configuration
 
 - **Image**: quay.io/jupyter/base-notebook
-- **Port**: 8888
+- **Port**: 888
 - **User**: jovyan
 - **Home Directory**: /home/jovyan
 
 ## Access
 
-Once deployed in Workbench, access your terminal at the app URL (port 8888).
+Once deployed in Workbench, access your terminal at the app URL (port 888).
 
 For local testing:
 1. Create Docker network: `docker network create app-network`
 2. Run the app: `devcontainer up --workspace-folder .`
-3. Access at: `http://localhost:8888`
+3. Access at: `http://localhost:888`
 
 ## Customization
 

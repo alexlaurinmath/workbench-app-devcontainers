@@ -2,7 +2,7 @@
   "id": "example",
   "version": "1.0.0",
   "name": "example",
-  "description": "Custom Workbench app: example (Image: quay.io/jupyter/base-notebook, Port: 8888, User: jovyan)",
+  "description": "Custom Workbench app: example (Image: quay.io/jupyter/base-notebook, Port: 888, User: jovyan)",
   "options": {
     "cloud": {
       "type": "string",
