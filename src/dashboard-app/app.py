@@ -92,7 +92,7 @@ def index():
     print("Index route accessed", file=sys.stderr, flush=True)
     return render_template('index.html')
 
-@app.route('api/data')
+@app.route('/api/data')
 def get_data():
     """API endpoint to fetch data."""
     try:
@@ -101,7 +101,7 @@ def get_data():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('api/metadata')
+@app.route('/api/metadata')
 def get_metadata():
     """API endpoint to fetch metadata about the dataset."""
     try:
