@@ -3,7 +3,6 @@ from flask_cors import CORS
 from google.cloud import bigquery
 import os
 import sys
-import numpy as np
 
 app = Flask(__name__)
 app.config['STRICT_SLASHES'] = False  # Prevents 308 redirects behind the proxy
