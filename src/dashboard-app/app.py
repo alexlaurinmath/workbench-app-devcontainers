@@ -3,6 +3,8 @@ from flask_cors import CORS
 from google.cloud import bigquery
 import os
 import sys
+import numpy as np
+import json
 
 app = Flask(__name__)
 app.config['STRICT_SLASHES'] = False  # Prevents 308 redirects behind the proxy
@@ -79,6 +81,9 @@ def get_bigquery_data():
         for col in df.columns:
             if df[col].dtype == 'datetime64[ns]' or df[col].dtype == 'datetime64[ns, UTC]':
                 df[col] = df[col].astype(str)
+            # Convert object columns that might contain ndarrays
+            elif df[col].dtype == 'object':
+                df[col] = df[col].apply(lambda x: x.tolist() if isinstance(x, np.ndarray) else x)
 
         # Replace NaN with None for proper JSON null
         df = df.replace({float('nan'): None})
