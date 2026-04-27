@@ -76,18 +76,11 @@ def get_bigquery_data():
         print("Executing data query...", file=sys.stderr, flush=True)
         df = client.query(query).to_dataframe()
 
-        # Convert datetime and other non-JSON-serializable types to strings
-        for col in df.columns:
-            if df[col].dtype == 'datetime64[ns]' or df[col].dtype == 'datetime64[ns, UTC]':
-                df[col] = df[col].astype(str)
-            # Convert object columns that might contain ndarrays
-            elif df[col].dtype == 'object':
-                df[col] = df[col].apply(lambda x: x.tolist() if isinstance(x, np.ndarray) else x)
+        # Use pandas to_json for robust conversion, then parse back
+        import json
+        json_str = df.to_json(orient='records', date_format='iso')
+        _data_cache = json.loads(json_str)
 
-        # Replace NaN with None for proper JSON null
-        df = df.replace({float('nan'): None})
-
-        _data_cache = df.to_dict(orient='records')
         print(f"Data retrieved: {len(_data_cache)} rows", file=sys.stderr, flush=True)
         return _data_cache
     except Exception as e:
