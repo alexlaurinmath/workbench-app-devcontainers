@@ -4,7 +4,6 @@ from google.cloud import bigquery
 import os
 import sys
 import numpy as np
-import json
 
 app = Flask(__name__)
 app.config['STRICT_SLASHES'] = False  # Prevents 308 redirects behind the proxy
