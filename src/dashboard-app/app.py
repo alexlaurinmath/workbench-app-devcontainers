@@ -74,6 +74,15 @@ def get_bigquery_data():
     try:
         print("Executing data query...", file=sys.stderr, flush=True)
         df = client.query(query).to_dataframe()
+
+        # Convert datetime and other non-JSON-serializable types to strings
+        for col in df.columns:
+            if df[col].dtype == 'datetime64[ns]' or df[col].dtype == 'datetime64[ns, UTC]':
+                df[col] = df[col].astype(str)
+
+        # Replace NaN with None for proper JSON null
+        df = df.replace({float('nan'): None})
+
         _data_cache = df.to_dict(orient='records')
         print(f"Data retrieved: {len(_data_cache)} rows", file=sys.stderr, flush=True)
         return _data_cache
@@ -99,6 +108,9 @@ def get_data():
         data = get_bigquery_data()
         return jsonify(data)
     except Exception as e:
+        print(f"Error in /api/data endpoint: {e}", file=sys.stderr, flush=True)
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/metadata')
