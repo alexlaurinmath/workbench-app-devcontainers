@@ -1,0 +1,8 @@
+{
+  "id": "dashboard-app",
+  "version": "1.0.0",
+  "name": "BigQuery Dashboard",
+  "description": "Interactive dashboard for visualizing BigQuery data with summary statistics",
+  "options": {},
+  "platforms": ["Any"]
+}

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BigQuery Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+        .chart {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .chart h3 {
+            margin-top: 0;
+            color: #2c3e50;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+        .error {
+            color: #e74c3c;
+            padding: 20px;
+            background: #fadbd8;
+            border-radius: 6px;
+            border-left: 4px solid #e74c3c;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .stat-card {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-top: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th {
+            background: #34495e;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        td {
+            border: 1px solid #ecf0f1;
+            padding: 10px;
+            font-size: 14px;
+        }
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        .spinner {
+            border: 3px solid #ecf0f1;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 ConditionView Dashboard</h1>
+        <p class="subtitle">Real-time data visualization and summary statistics from wb-buoyant-okra-4591.clean_output_himss.ConditionView</p>
+
+        <div id="metadata" class="chart">
+            <h3>Dataset Summary</h3>
+            <div id="metadata-content" class="loading">
+                <div class="spinner"></div>
+                Loading metadata...
+            </div>
+        </div>
+
+        <div id="chart1" class="chart">
+            <h3>Data Visualization</h3>
+            <div id="chart-content" class="loading">
+                <div class="spinner"></div>
+                Loading chart...
+            </div>
+        </div>
+
+        <div id="table" class="chart">
+            <h3>Data Table (First 50 Rows)</h3>
+            <div id="table-content" class="loading">
+                <div class="spinner"></div>
+                Loading data...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // CRITICAL: Use relative paths (no leading slash!)
+
+        async function loadMetadata() {
+            try {
+                const response = await fetch('api/metadata');  // Relative path!
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+
+                const statsHtml = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Total Rows in Table</div>
+                            <div class="stat-value">${data.row_count.toLocaleString()}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Sample Size</div>
+                            <div class="stat-value">${data.sample_size.toLocaleString()}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Total Columns</div>
+                            <div class="stat-value">${data.columns.length}</div>
+                        </div>
+                    </div>
+                    <p style="margin-top: 20px;"><strong>Columns:</strong> ${data.columns.join(', ')}</p>
+                `;
+
+                document.getElementById('metadata-content').innerHTML = statsHtml;
+            } catch (error) {
+                document.getElementById('metadata-content').innerHTML =
+                    `<div class="error">Error loading metadata: ${error.message}</div>`;
+                console.error('Metadata error:', error);
+            }
+        }
+
+        async function loadChart() {
+            try {
+                const response = await fetch('api/data');  // Relative path!
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+
+                if (data.length === 0) {
+                    document.getElementById('chart-content').innerHTML = '<p>No data available</p>';
+                    return;
+                }
+
+                // Create a simple bar chart with first numeric column
+                const columns = Object.keys(data[0]);
+                const numericCol = columns.find(col => typeof data[0][col] === 'number') || columns[1];
+                const labelCol = columns[0];
+
+                const chartData = [{
+                    x: data.slice(0, 20).map(row => row[labelCol]),
+                    y: data.slice(0, 20).map(row => row[numericCol]),
+                    type: 'bar',
+                    marker: { color: '#3498db' }
+                }];
+
+                const layout = {
+                    title: `${numericCol} by ${labelCol}`,
+                    xaxis: { title: labelCol },
+                    yaxis: { title: numericCol },
+                    font: { family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto' }
+                };
+
+                Plotly.newPlot('chart-content', chartData, layout);
+            } catch (error) {
+                document.getElementById('chart-content').innerHTML =
+                    `<div class="error">Error loading chart: ${error.message}</div>`;
+                console.error('Chart error:', error);
+            }
+        }
+
+        async function loadTable() {
+            try {
+                const response = await fetch('api/data');  // Relative path!
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+
+                if (data.length === 0) {
+                    document.getElementById('table-content').innerHTML = '<p>No data available</p>';
+                    return;
+                }
+
+                const columns = Object.keys(data[0]);
+                let html = '<div style="overflow-x: auto;"><table>';
+                html += '<thead><tr>' + columns.map(col => `<th>${col}</th>`).join('') + '</tr></thead>';
+                html += '<tbody>';
+                data.slice(0, 50).forEach(row => {
+                    html += '<tr>' + columns.map(col => `<td>${row[col] ?? ''}</td>`).join('') + '</tr>';
+                });
+                html += '</tbody></table></div>';
+
+                document.getElementById('table-content').innerHTML = html;
+            } catch (error) {
+                document.getElementById('table-content').innerHTML =
+                    `<div class="error">Error loading table: ${error.message}</div>`;
+                console.error('Table error:', error);
+            }
+        }
+
+        // Load all components
+        loadMetadata();
+        loadChart();
+        loadTable();
+    </script>
+</body>
+</html>
